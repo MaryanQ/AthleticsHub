@@ -1,8 +1,8 @@
 @echo off
 
 REM Folder to zip
-set FOLDER_TO_ZIP1=src\main\java\dat3\security
-set FOLDER_TO_ZIP2=src\test\java\dat3\security
+set FOLDER_TO_ZIP1=src\main\java\atletik\security
+set FOLDER_TO_ZIP2=src\test\java\atletik\security
 
 REM Output folder for the zipped file
 set OUTPUT_FOLDER=security-zipped
