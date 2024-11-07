@@ -38,6 +38,8 @@ public class Participant {
     @JsonManagedReference(value = "participant-results")
     private List<Result> results = new ArrayList<>();
 
+
+
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
     @JoinTable(
             name = "participant_discipline",

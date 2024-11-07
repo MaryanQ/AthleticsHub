@@ -10,6 +10,7 @@ import atletik.rename_me.repository.ResultRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,8 +69,29 @@ public class ParticipantService {
 
     // 5. Slet en deltager baseret på ID
     public void deleteParticipant(Long id) {
-        // Denne metode sletter en deltager fra databasen baseret på deres id. Den bruger deleteById() til at slette posten med det givne id i databasen.
-        participantRepository.deleteById(id);
+        // Load the Participant from the database
+        Optional<Participant> participantOpt = participantRepository.findById(id);
+
+        if (participantOpt.isPresent()) {
+            Participant participant = participantOpt.get();
+
+            // Delete all associated Result entries
+            List<Result> results = new ArrayList<>(participant.getResults()); // Copy to avoid concurrent modification
+            // Delete each result
+            resultRepository.deleteAll(results);
+            participant.getResults().clear(); // Clear the list of results in Participant
+
+            // Remove associations with Disciplines
+            participant.getDisciplines().clear(); // Clear disciplines
+
+            // Save participant to ensure associations are removed
+            participantRepository.save(participant);
+
+            // Finally, delete the participant
+            participantRepository.delete(participant);
+        } else {
+            throw new RuntimeException("Participant not found");
+        }
     }
 
     // 6. Søg deltagere baseret på navn
