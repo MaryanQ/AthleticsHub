@@ -1,5 +1,6 @@
 package atletik.rename_me.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,10 +24,12 @@ public class Result {
 
     @ManyToOne
     @JoinColumn(name = "participant_id", nullable = false)
+    @JsonIgnore
     private Participant participant;
 
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne
     @JoinColumn(name = "discipline_id")
+    @JsonIgnore
     private Discipline discipline;
 
 

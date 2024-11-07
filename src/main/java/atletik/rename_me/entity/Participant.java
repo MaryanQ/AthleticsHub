@@ -4,6 +4,7 @@ import atletik.rename_me.enums.AgeGroup;
 import atletik.rename_me.enums.Gender;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -32,16 +33,18 @@ public class Participant {
     private AgeGroup ageGroup;
 
     @OneToMany(mappedBy = "participant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonIgnore
     private List<Result> results = new ArrayList<>();
 
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
     @JoinTable(
             name = "participant_discipline",
             joinColumns = @JoinColumn(name = "participant_id"),
             inverseJoinColumns = @JoinColumn(name = "discipline_id")
     )
     private List<Discipline> disciplines = new ArrayList<>();
+
 
     // Default konstruktør (nødvendig for JPA)
     public Participant() {

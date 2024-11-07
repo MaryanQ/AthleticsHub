@@ -9,6 +9,7 @@ import atletik.rename_me.enums.Gender;
 import atletik.rename_me.enums.AgeGroup;
 import atletik.rename_me.service.ParticipantService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -86,15 +87,15 @@ public class ParticipantController {
 
     // 8. Tilføj en disciplin til en deltager
     @PostMapping("/{participantId}/disciplines/{disciplineId}")
-    public ResponseEntity<Participant> addDisciplineToParticipant(
-            @PathVariable Long participantId,
-            @PathVariable Long disciplineId) {
-        Participant participant = participantService.addDisciplineToParticipant(participantId, disciplineId);
-        if (participant != null) {
-            return ResponseEntity.ok(participant);
+    public ResponseEntity<String> addDisciplineToParticipant(
+            @PathVariable Long participantId, @PathVariable Long disciplineId) {
+        String result = participantService.addDisciplineToParticipant(participantId, disciplineId);
+        if (result.equals("Discipline successfully added to participant.")) {
+            return ResponseEntity.ok(result);
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
     }
+
 
     // 9. Tilføj et resultat for en deltager i en given disciplin
     @PostMapping("/{participantId}/disciplines/{disciplineId}/results")

@@ -102,7 +102,7 @@ public class ParticipantService {
 
 
     // 7. Tilføj en disciplin til en deltager
-    public Participant addDisciplineToParticipant(Long participantId, Long disciplineId) {
+    public String addDisciplineToParticipant(Long participantId, Long disciplineId) {
         Optional<Participant> participantOpt = participantRepository.findById(participantId);
         Optional<Discipline> disciplineOpt = disciplineRepository.findById(disciplineId);
 
@@ -110,12 +110,15 @@ public class ParticipantService {
             Participant participant = participantOpt.get();
             Discipline discipline = disciplineOpt.get();
 
-            if (!participant.getDisciplines().contains(discipline)) {
-                participant.getDisciplines().add(discipline);
-                return participantRepository.save(participant);
+            if (participant.getDisciplines().contains(discipline)) {
+                return "Discipline already added to participant.";
             }
+
+            participant.getDisciplines().add(discipline);
+            participantRepository.save(participant);
+            return "Discipline successfully added to participant.";
         }
-        return null;
+        return "Participant or Discipline not found.";
     }
 
     // 9. Tilføj et resultat for en deltager i en given disciplin

@@ -1,6 +1,7 @@
 package atletik.rename_me.entity;
 
 import atletik.rename_me.enums.ResultType;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,6 +27,7 @@ public class Discipline {
     private ResultType resultType;
 
     @OneToMany(mappedBy = "discipline", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonManagedReference
     private List<Result> results = new ArrayList<>();
 
 

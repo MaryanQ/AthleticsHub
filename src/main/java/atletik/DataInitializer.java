@@ -3,6 +3,7 @@ package atletik;
 import atletik.rename_me.entity.Discipline;
 import atletik.rename_me.entity.Participant;
 import atletik.rename_me.entity.Result;
+import atletik.rename_me.enums.AgeGroup;
 import atletik.rename_me.enums.Gender;
 import atletik.rename_me.enums.ResultType;
 import atletik.rename_me.repository.DisciplineRepository;
@@ -14,8 +15,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-
 @Component
 public class DataInitializer {
 
@@ -51,47 +52,77 @@ public class DataInitializer {
                     new Discipline("5-Kamp", ResultType.POINTS)
             );
             disciplineRepository.saveAll(disciplines);
+            System.out.println("Disciplines initialized: " + disciplines);
         }
     }
 
     private void initParticipants() {
         if (participantRepository.count() == 0) {
+            List<Discipline> disciplines = disciplineRepository.findAll();
+
             List<Participant> participants = List.of(
                     new Participant("John", "Doe", Gender.MALE, 25, "ABC Klub"),
                     new Participant("Jane", "Smith", Gender.FEMALE, 28, "XYZ Klub"),
                     new Participant("Emily", "Johnson", Gender.FEMALE, 23, "LMN Klub"),
-                    new Participant("Michael", "Brown", Gender.MALE, 30, "DEF Klub")
+                    new Participant("Michael", "Brown", Gender.MALE, 30, "DEF Klub"),
+                    new Participant("Linda", "White", Gender.FEMALE, 22, "GHI Klub"),
+                    new Participant("Chris", "Green", Gender.MALE, 27, "JKL Klub"),
+                    new Participant("Sarah", "Black", Gender.FEMALE, 26, "MNO Klub"),
+                    new Participant("James", "Blue", Gender.MALE, 29, "PQR Klub")
             );
-            participantRepository.saveAll(participants);
+
+            // Assign disciplines and age groups
+            for (int i = 0; i < participants.size(); i++) {
+                Participant participant = participants.get(i);
+                participant.getDisciplines().add(disciplines.get(i));  // Assign unique discipline
+
+                // Set age group based on age
+                participant.setAgeGroup(determineAgeGroup(participant.getAge()));
+            }
+
+            participantRepository.saveAll(participants);  // Persist participants with disciplines and age groups
+            System.out.println("Participants initialized with disciplines and age groups: " + participants);
         }
     }
-
-
 
     @Transactional
     public void initResults() {
         if (resultRepository.count() == 0) {
-            List<Discipline> disciplines = disciplineRepository.findAll();
             List<Participant> participants = participantRepository.findAll();
 
-            if (!disciplines.isEmpty() && !participants.isEmpty()) {
-                Result result1 = new Result(participants.get(0), disciplines.get(0), "12.34", LocalDate.now());
-                Result result2 = new Result(participants.get(1), disciplines.get(1), "24.56", LocalDate.now());
-                Result result3 = new Result(participants.get(2), disciplines.get(3), "1.75", LocalDate.now());
+            if (participants.size() == 8) {
+                List<Result> results = new ArrayList<>();
 
-                participants.get(0).getResults().add(result1);
-                disciplines.get(0).getResults().add(result1);
+                // Create one result for each participant and their respective discipline
+                for (Participant participant : participants) {
+                    Discipline discipline = participant.getDisciplines().get(0);  // Get the assigned discipline
+                    String resultValue = String.format("%.2f", Math.random() * 100);  // Random result value
+                    Result result = new Result(participant, discipline, resultValue, LocalDate.now());
 
-                participants.get(1).getResults().add(result2);
-                disciplines.get(1).getResults().add(result2);
+                    // Add the result to both participant and discipline
+                    participant.getResults().add(result);
+                    discipline.getResults().add(result);
 
-                participants.get(2).getResults().add(result3);
-                disciplines.get(3).getResults().add(result3);
+                    // Collect the result to save later
+                    results.add(result);
+                }
 
-                // Gem resultaterne
-                resultRepository.saveAll(List.of(result1, result2, result3));
+                resultRepository.saveAll(results);  // Persist results
+                participantRepository.saveAll(participants);  // Update participants with results
+                disciplineRepository.saveAll(disciplineRepository.findAll());  // Update disciplines with results
+
+                System.out.println("Results initialized for each participant in their assigned discipline.");
             }
         }
     }
-
+    private AgeGroup determineAgeGroup(int age) {
+        if (age <= 24) {
+            return AgeGroup.YOUTH;
+        } else if (age <= 34) {
+            return AgeGroup.ADULT;
+        } else {
+            return AgeGroup.SENIOR;
+        }
+    }
 }
+
