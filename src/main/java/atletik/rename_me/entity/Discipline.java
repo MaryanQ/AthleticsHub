@@ -1,6 +1,7 @@
 package atletik.rename_me.entity;
 
 import atletik.rename_me.enums.ResultType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,7 @@ import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class Discipline {
 
     @Id
@@ -27,20 +29,13 @@ public class Discipline {
     private ResultType resultType;
 
     @OneToMany(mappedBy = "discipline", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JsonManagedReference
+    @JsonManagedReference(value = "discipline-results")
+
+    @JsonIgnore
     private List<Result> results = new ArrayList<>();
 
-
-    // Default konstruktør (nødvendig for JPA)
-    public Discipline() {
-    }
-
-    // Konstruktør med navn og resultat-type
     public Discipline(String name, ResultType resultType) {
         this.name = name;
         this.resultType = resultType;
     }
-
-
 }
-

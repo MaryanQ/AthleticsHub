@@ -2,11 +2,13 @@ package atletik.rename_me.entity;
 
 import atletik.rename_me.enums.AgeGroup;
 import atletik.rename_me.enums.Gender;
-
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +16,7 @@ import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
-
+@NoArgsConstructor
 public class Participant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,9 +35,8 @@ public class Participant {
     private AgeGroup ageGroup;
 
     @OneToMany(mappedBy = "participant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JsonIgnore
+    @JsonManagedReference(value = "participant-results")
     private List<Result> results = new ArrayList<>();
-
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
     @JoinTable(
@@ -45,12 +46,6 @@ public class Participant {
     )
     private List<Discipline> disciplines = new ArrayList<>();
 
-
-    // Default konstruktør (nødvendig for JPA)
-    public Participant() {
-    }
-
-    // Konstruktør med fornavn, efternavn, køn, alder og klub
     public Participant(String firstName, String lastName, Gender gender, int age, String club) {
         this.firstName = firstName;
         this.lastName = lastName;

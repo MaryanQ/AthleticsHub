@@ -87,13 +87,14 @@ public class ParticipantController {
 
     // 8. Tilføj en disciplin til en deltager
     @PostMapping("/{participantId}/disciplines/{disciplineId}")
-    public ResponseEntity<String> addDisciplineToParticipant(
+    public ResponseEntity<Participant> addDisciplineToParticipant(
             @PathVariable Long participantId, @PathVariable Long disciplineId) {
-        String result = participantService.addDisciplineToParticipant(participantId, disciplineId);
-        if (result.equals("Discipline successfully added to participant.")) {
-            return ResponseEntity.ok(result);
+        try {
+            Participant updatedParticipant = participantService.addDisciplineToParticipant(participantId, disciplineId);
+            return ResponseEntity.ok(updatedParticipant);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
     }
 
 
@@ -109,6 +110,8 @@ public class ParticipantController {
         }
         return ResponseEntity.notFound().build();
     }
+
+
 
     // 10. Opdater et resultat
     @PutMapping("/results/{resultId}")
