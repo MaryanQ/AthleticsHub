@@ -1,7 +1,7 @@
 package atletik.rename_me.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,9 +29,8 @@ public class Result {
     private Participant participant;
 
     @ManyToOne
-    @JoinColumn(name = "discipline_id")
+    @JoinColumn(name = "discipline_id", nullable = false)
     @JsonBackReference(value = "discipline-results")
-
     private Discipline discipline;
 
     public Result(Participant participant, Discipline discipline, String resultValue, LocalDate date) {

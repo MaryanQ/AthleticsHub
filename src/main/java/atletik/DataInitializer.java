@@ -56,8 +56,10 @@ public class DataInitializer {
         }
     }
 
-    private void initParticipants() {
+    @Transactional
+    public void initParticipants() {
         if (participantRepository.count() == 0) {
+            // Gem alle Disciplines først
             List<Discipline> disciplines = disciplineRepository.findAll();
 
             List<Participant> participants = List.of(
@@ -71,19 +73,23 @@ public class DataInitializer {
                     new Participant("James", "Blue", Gender.MALE, 29, "PQR Klub")
             );
 
-            // Assign disciplines and age groups
+            // Gem deltagerne uden at tilknytte discipliner
+            participantRepository.saveAll(participants);
+
+            // Tildel disciplinerne efterfølgende
             for (int i = 0; i < participants.size(); i++) {
                 Participant participant = participants.get(i);
-                participant.getDisciplines().add(disciplines.get(i));  // Assign unique discipline
-
-                // Set age group based on age
+                participant.getDisciplines().add(disciplines.get(i % disciplines.size()));  // Cykl gennem discipliner
                 participant.setAgeGroup(determineAgeGroup(participant.getAge()));
             }
 
-            participantRepository.saveAll(participants);  // Persist participants with disciplines and age groups
+            // Gem opdaterede deltagere med discipliner
+            participantRepository.saveAll(participants);
+
             System.out.println("Participants initialized with disciplines and age groups: " + participants);
         }
     }
+
 
     @Transactional
     public void initResults() {
@@ -94,35 +100,37 @@ public class DataInitializer {
             if (participants.size() >= 3 && disciplines.size() >= 3) {
                 List<Result> results = new ArrayList<>();
 
-                // Manually create results for specific participants and disciplines
+                // Opret resultater uden at tilføje dem direkte til deltagerne og disciplinerne
                 Result result1 = new Result(participants.get(0), disciplines.get(0), "12.34", LocalDate.now());
                 Result result2 = new Result(participants.get(1), disciplines.get(1), "45.67", LocalDate.now());
                 Result result3 = new Result(participants.get(2), disciplines.get(2), "89.10", LocalDate.now());
 
-                // Associate results with participants and disciplines
-                participants.get(0).getResults().add(result1);
-                disciplines.get(0).getResults().add(result1);
-
-                participants.get(1).getResults().add(result2);
-                disciplines.get(1).getResults().add(result2);
-
-                participants.get(2).getResults().add(result3);
-                disciplines.get(2).getResults().add(result3);
-
-                // Add results to the list
+                // Tilføj resultaterne til listen for batch-save
                 results.add(result1);
                 results.add(result2);
                 results.add(result3);
 
-                // Save results and update participants and disciplines
+                // Gem resultaterne først for at tilknytte deres IDs
                 resultRepository.saveAll(results);
+
+                // Nu hvor resultaterne er gemt, opdaterer vi deltagere og discipliner
+                participants.get(0).getResults().add(result1);
+                participants.get(1).getResults().add(result2);
+                participants.get(2).getResults().add(result3);
+
+                disciplines.get(0).getResults().add(result1);
+                disciplines.get(1).getResults().add(result2);
+                disciplines.get(2).getResults().add(result3);
+
+                // Gem de opdaterede deltagere og discipliner
                 participantRepository.saveAll(participants);
                 disciplineRepository.saveAll(disciplines);
 
-                System.out.println("Fixed results initialized for specific participants and disciplines.");
+                System.out.println("Results initialized and associated with participants and disciplines.");
             }
         }
     }
+
 
     private AgeGroup determineAgeGroup(int age) {
         if (age <= 24) {

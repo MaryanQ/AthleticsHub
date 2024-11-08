@@ -40,7 +40,7 @@ public class Participant {
 
 
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) // Fjernet CascadeType.REMOVE
     @JoinTable(
             name = "participant_discipline",
             joinColumns = @JoinColumn(name = "participant_id"),

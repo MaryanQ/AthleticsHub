@@ -105,7 +105,7 @@ public class ResultService {
 
             return String.format("%02d:%02d:%02d:%02d", hours, minutes, seconds, hundredths);
         } catch (NumberFormatException e) {
-            // Returnerer original værdi, hvis input ikke kan parses til en double
+            // Return original value if input cannot be parsed to double
             return timeValue;
         }
     }
@@ -119,10 +119,74 @@ public class ResultService {
 
             return String.format("%d.%02d m", meters, centimeters);
         } catch (NumberFormatException e) {
-            // Returnerer original værdi, hvis input ikke kan parses til en double
+            // Return original value if input cannot be parsed to double
             return distanceValue;
         }
     }
 
-}
+    // Method to delete a specific result for a participant
+    public void deleteResultFromParticipant(Long participantId, Long resultId) {
+        // Find the participant based on participantId
+        Optional<Participant> participantOpt = participantRepository.findById(participantId);
+        if (!participantOpt.isPresent()) {
+            throw new RuntimeException("Participant not found");
+        }
 
+        // Find the result based on resultId
+        Optional<Result> resultOpt = resultRepository.findById(resultId);
+        if (!resultOpt.isPresent()) {
+            throw new RuntimeException("Result not found");
+        }
+
+        Participant participant = participantOpt.get();
+        Result result = resultOpt.get();
+
+        // Check if the result is associated with the participant
+        if (!participant.getResults().contains(result)) {
+            throw new RuntimeException("Result not associated with participant");
+        }
+
+        // Remove the result from the participant's list of results
+        participant.getResults().remove(result);
+
+        // Save the participant to update the state in the database
+        participantRepository.save(participant);
+
+        // Finally, delete the result from the database
+        resultRepository.delete(result);
+    }
+
+    public Result addResultToDiscipline(Long participantId, Long disciplineId, Result result) {
+        Participant participant = participantRepository.findById(participantId)
+                .orElseThrow(() -> new RuntimeException("Participant not found"));
+
+        Discipline discipline = disciplineRepository.findById(disciplineId)
+                .orElseThrow(() -> new RuntimeException("Discipline not found"));
+
+        result.setParticipant(participant); // Sætter deltageren
+        result.setDiscipline(discipline);   // Sætter disciplinen
+
+        return resultRepository.save(result);
+    }
+
+    public Result updateResultForParticipant(Long participantId, Long disciplineId, Long resultId, Result updatedResult) {
+        Result existingResult = resultRepository.findById(resultId)
+                .orElseThrow(() -> new RuntimeException("Result not found"));
+
+        Participant participant = participantRepository.findById(participantId)
+                .orElseThrow(() -> new RuntimeException("Participant not found"));
+
+        Discipline discipline = disciplineRepository.findById(disciplineId)
+                .orElseThrow(() -> new RuntimeException("Discipline not found"));
+
+        existingResult.setDate(updatedResult.getDate());
+        existingResult.setResultValue(updatedResult.getResultValue());
+        existingResult.setDiscipline(discipline);   // Opdaterer disciplinen
+        existingResult.setParticipant(participant); // Opdaterer deltageren
+
+        return resultRepository.save(existingResult);
+    }
+
+
+
+}

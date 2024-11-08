@@ -150,6 +150,40 @@ public class ParticipantService {
         }
         return null;
     }
+    public Discipline updateDisciplineForParticipant(Long participantId, Long disciplineId, Discipline updatedDiscipline) {
+        Optional<Participant> participantOpt = participantRepository.findById(participantId);
+        Optional<Discipline> disciplineOpt = disciplineRepository.findById(disciplineId);
+
+        if (participantOpt.isPresent() && disciplineOpt.isPresent()) {
+            Discipline discipline = disciplineOpt.get();
+
+            // Update fields of the discipline as needed
+            discipline.setName(updatedDiscipline.getName());
+            discipline.setResultType(updatedDiscipline.getResultType());
+
+            return disciplineRepository.save(discipline);
+        }
+        throw new RuntimeException("Participant or Discipline not found");
+    }
+
+    public Result updateResultForParticipant(Long participantId, Long disciplineId, Long resultId, Result updatedResult) {
+        Optional<Participant> participantOpt = participantRepository.findById(participantId);
+        Optional<Discipline> disciplineOpt = disciplineRepository.findById(disciplineId);
+        Optional<Result> resultOpt = resultRepository.findById(resultId);
+
+        if (participantOpt.isPresent() && disciplineOpt.isPresent() && resultOpt.isPresent()) {
+            Result result = resultOpt.get();
+
+            // Update result fields as necessary
+            result.setResultValue(updatedResult.getResultValue());
+            result.setDate(updatedResult.getDate());
+
+            return resultRepository.save(result);
+        }
+        throw new RuntimeException("Participant, Discipline, or Result not found");
+    }
+
+
 
     public Result updateResult(Long resultId, Result updatedResult) {
         Optional<Result> resultOpt = resultRepository.findById(resultId);

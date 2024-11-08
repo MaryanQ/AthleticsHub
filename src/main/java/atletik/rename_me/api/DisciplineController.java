@@ -3,7 +3,9 @@ package atletik.rename_me.api;
 import atletik.rename_me.entity.Discipline;
 import atletik.rename_me.enums.ResultType;
 import atletik.rename_me.service.DisciplineService;
+import atletik.rename_me.service.ParticipantService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +17,12 @@ import java.util.Optional;
 public class DisciplineController {
 
     private final DisciplineService disciplineService;
+    private final ParticipantService participantService;
 
     @Autowired
-    public DisciplineController(DisciplineService disciplineService) {
+    public DisciplineController(DisciplineService disciplineService, ParticipantService participantService) {
         this.disciplineService = disciplineService;
+        this.participantService = participantService;
     }
 
     // 1. Hent alle discipliner
@@ -59,7 +63,7 @@ public class DisciplineController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDiscipline(@PathVariable Long id) {
         disciplineService.deleteDiscipline(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build();  // Returner 204 No Content ved succes
     }
 
     // 6. Find discipliner baseret på resultattype (f.eks. tid, afstand eller point)
@@ -68,4 +72,31 @@ public class DisciplineController {
         List<Discipline> disciplines = disciplineService.findDisciplinesByResultType(resultType);
         return ResponseEntity.ok(disciplines);
     }
+    @DeleteMapping("/{disciplineId}/participants/{participantId}")
+    public ResponseEntity<Void> deleteDisciplineFromParticipant(
+            @PathVariable Long disciplineId,
+            @PathVariable Long participantId) {
+
+        try {
+            disciplineService.deleteDisciplineFromParticipant(participantId, disciplineId);
+            return ResponseEntity.noContent().build(); // Return 204 No Content on successful deletion
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Return 404 if participant or discipline not found
+        }
+    }
+
+    @PutMapping("/participants/{participantId}/disciplines/{disciplineId}")
+    public ResponseEntity<Discipline> updateDisciplineForParticipant(
+            @PathVariable Long participantId,
+            @PathVariable Long disciplineId,
+            @RequestBody Discipline updatedDiscipline) {
+
+        Discipline discipline = participantService.updateDisciplineForParticipant(participantId, disciplineId, updatedDiscipline);
+        if (discipline != null) {
+            return ResponseEntity.ok(discipline);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+
 }

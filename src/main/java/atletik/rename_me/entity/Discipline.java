@@ -31,6 +31,7 @@ public class Discipline {
     @OneToMany(mappedBy = "discipline", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference(value = "discipline-results")
 
+
     @JsonIgnore
     private List<Result> results = new ArrayList<>();
 
