@@ -3,12 +3,16 @@ package atletik.rename_me.service;
 import atletik.rename_me.entity.Discipline;
 import atletik.rename_me.entity.Participant;
 import atletik.rename_me.entity.Result;
+import atletik.rename_me.exception.ParticipantNotFoundException;
 import atletik.rename_me.repository.DisciplineRepository;
 import atletik.rename_me.repository.ParticipantRepository;
 
 import atletik.rename_me.repository.ResultRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +24,8 @@ public class ParticipantService {
     private final ParticipantRepository participantRepository;
     private final DisciplineRepository disciplineRepository;
     private final ResultRepository resultRepository;
+    private static final Logger logger = LoggerFactory.getLogger(ParticipantService.class);
+
 
     @Autowired
     public ParticipantService(ParticipantRepository participantRepository, DisciplineRepository disciplineRepository, ResultRepository resultRepository) {
@@ -28,71 +34,97 @@ public class ParticipantService {
         this.resultRepository = resultRepository;
     }
 
-    // 1. Hent alle deltagere
-    public List<Participant> getAllParticipants() {
-        // Denne metode bruger findAll()-metoden fra participantRepository til at hente en liste over alle participant-objekter fra databasen.
-        // Den returnerer en liste (List<Participant>) med alle deltagere.
-        return participantRepository.findAll();
-    }
+    // Existing methods...
 
-    // 2. Hent detaljer om en specifik deltager ved ID
-    public Optional<Participant> getParticipantById(Long id) {
-        // Denne metode finder en deltager baseret på deres id. Den bruger findById(), som returnerer en Optional<Participant>.
-        // Optional bruges her til at håndtere det tilfælde, hvor der ikke findes en deltager med det givne id. Hvis deltageren findes, returneres objektet, ellers returneres en tom Optional.
-        return participantRepository.findById(id);
-    }
-
-    // 3. Opret en ny deltager
+    // 1. Create a new participant
     public Participant createParticipant(Participant participant) {
-        // Denne metode opretter en ny deltager ved at bruge save()-metoden fra participantRepository. save() gemmer participant-objektet i databasen og returnerer det gemte objekt.
-        // Hvis deltageren allerede findes, opdaterer save() den eksisterende post.
         return participantRepository.save(participant);
     }
 
-    // 4. Opdater en eksisterende deltager
+    // 2. Read all participants
+    public List<Participant> getAllParticipants() {
+        return participantRepository.findAll();
+    }
+
+    // 3. Read a participant by ID
+    public Optional<Participant> getParticipantById(Long id) {
+        return participantRepository.findById(id);
+    }
+
     public Participant updateParticipant(Long id, Participant updatedParticipant) {
-        // Denne metode opdaterer en deltager baseret på deres id. Først forsøger den at finde deltageren i databasen ved hjælp af findById().
-        // Hvis deltageren findes (altså existingParticipant ikke er null), opdateres deres egenskaber med værdierne fra updatedParticipant.
-        // Til sidst gemmes den opdaterede deltager i databasen ved hjælp af save(), og den opdaterede deltager returneres. Hvis deltageren ikke findes, returnerer metoden null.
-        Participant existingParticipant = participantRepository.findById(id).orElse(null);
+        return participantRepository.findById(id)
+                .map(participant -> {
+                    participant.setFirstName(updatedParticipant.getFirstName());
+                    participant.setLastName(updatedParticipant.getLastName());
+                    participant.setGender(updatedParticipant.getGender());
+                    participant.setAge(updatedParticipant.getAge());
+                    participant.setClub(updatedParticipant.getClub());
+                    participant.setAgeGroup(updatedParticipant.getAgeGroup());
 
-        if (existingParticipant != null) {
-            existingParticipant.setFirstName(updatedParticipant.getFirstName());
-            existingParticipant.setLastName(updatedParticipant.getLastName());
-            existingParticipant.setGender(updatedParticipant.getGender());
-            existingParticipant.setAge(updatedParticipant.getAge());
-            existingParticipant.setClub(updatedParticipant.getClub());
-            return participantRepository.save(existingParticipant);
-        }
-        return null;
+                    // Update disciplines
+                    participant.getDisciplines().clear();
+                    participant.getDisciplines().addAll(updatedParticipant.getDisciplines());
+
+                    // Clear and update results, ensuring discipline is set
+                    participant.getResults().clear();
+                    for (Result result : updatedParticipant.getResults()) {
+                        if (result.getDiscipline() == null) {
+                            throw new IllegalArgumentException("Each result must have a discipline.");
+                        }
+                        result.setParticipant(participant); // Set back-reference
+                        participant.getResults().add(result); // Add to participant's results
+                    }
+
+                    return participantRepository.save(participant);
+                })
+                .orElseThrow(() -> new ParticipantNotFoundException("Participant not found with ID: " + id));
     }
 
-    // 5. Slet en deltager baseret på ID
+
+    // 5. Delete a participant by ID
     public void deleteParticipant(Long id) {
-        // Load the Participant from the database
-        Optional<Participant> participantOpt = participantRepository.findById(id);
-
-        if (participantOpt.isPresent()) {
-            Participant participant = participantOpt.get();
-
-            // Delete all associated Result entries
-            List<Result> results = new ArrayList<>(participant.getResults()); // Copy to avoid concurrent modification
-            // Delete each result
-            resultRepository.deleteAll(results);
-            participant.getResults().clear(); // Clear the list of results in Participant
-
-            // Remove associations with Disciplines
-            participant.getDisciplines().clear(); // Clear disciplines
-
-            // Save participant to ensure associations are removed
-            participantRepository.save(participant);
-
-            // Finally, delete the participant
-            participantRepository.delete(participant);
-        } else {
-            throw new RuntimeException("Participant not found");
-        }
+        participantRepository.deleteById(id);
     }
+
+    // 6. Add a discipline to a participant
+    @Transactional
+    public Participant addDisciplineToParticipant(Long participantId, Long disciplineId) {
+        Participant participant = participantRepository.findById(participantId)
+                .orElseThrow(() -> new RuntimeException("Participant not found with ID: " + participantId));
+        Discipline discipline = disciplineRepository.findById(disciplineId)
+                .orElseThrow(() -> new RuntimeException("Discipline not found with ID: " + disciplineId));
+
+        participant.getDisciplines().add(discipline);
+        return participantRepository.save(participant);
+    }
+
+    // 7. Remove a discipline from a participant
+    @Transactional
+    public Participant removeDisciplineFromParticipant(Long participantId, Long disciplineId) {
+        Participant participant = participantRepository.findById(participantId)
+                .orElseThrow(() -> new RuntimeException("Participant not found with ID: " + participantId));
+        Discipline discipline = disciplineRepository.findById(disciplineId)
+                .orElseThrow(() -> new RuntimeException("Discipline not found with ID: " + disciplineId));
+
+        participant.getDisciplines().remove(discipline);
+        return participantRepository.save(participant);
+    }
+
+    // 8. Add a result to a participant
+    public Result addResultToParticipant(Long participantId, Result result) {
+        Participant participant = participantRepository.findById(participantId)
+                .orElseThrow(() -> new RuntimeException("Participant not found with ID: " + participantId));
+        result.setParticipant(participant);
+        return resultRepository.save(result);
+    }
+
+    // 9. Remove a result by result ID
+    public void removeResult(Long resultId) {
+        resultRepository.deleteById(resultId);
+    }
+
+
+
 
     // 6. Søg deltagere baseret på navn
     public List<Participant> searchParticipantsByName(String name) {
@@ -121,84 +153,5 @@ public class ParticipantService {
 
 
 
-
-
-    // 7. Tilføj en disciplin til en deltager
-    public Participant addDisciplineToParticipant(Long participantId, Long disciplineId) {
-        Optional<Participant> participantOpt = participantRepository.findById(participantId);
-        Optional<Discipline> disciplineOpt = disciplineRepository.findById(disciplineId);
-
-        if (participantOpt.isPresent() && disciplineOpt.isPresent()) {
-            Participant participant = participantOpt.get();
-            Discipline discipline = disciplineOpt.get();
-            participant.getDisciplines().add(discipline);
-            return participantRepository.save(participant);
-        } else {
-            throw new RuntimeException("Participant or Discipline not found");
-        }
-    }
-
-    // 9. Tilføj et resultat for en deltager i en given disciplin
-    public Result addResultToParticipant(Long participantId, Long disciplineId, Result result) {
-        Optional<Participant> participantOpt = participantRepository.findById(participantId);
-        Optional<Discipline> disciplineOpt = disciplineRepository.findById(disciplineId);
-
-        if (participantOpt.isPresent() && disciplineOpt.isPresent()) {
-            result.setParticipant(participantOpt.get());
-            result.setDiscipline(disciplineOpt.get());
-            return resultRepository.save(result);
-        }
-        return null;
-    }
-    public Discipline updateDisciplineForParticipant(Long participantId, Long disciplineId, Discipline updatedDiscipline) {
-        Optional<Participant> participantOpt = participantRepository.findById(participantId);
-        Optional<Discipline> disciplineOpt = disciplineRepository.findById(disciplineId);
-
-        if (participantOpt.isPresent() && disciplineOpt.isPresent()) {
-            Discipline discipline = disciplineOpt.get();
-
-            // Update fields of the discipline as needed
-            discipline.setName(updatedDiscipline.getName());
-            discipline.setResultType(updatedDiscipline.getResultType());
-
-            return disciplineRepository.save(discipline);
-        }
-        throw new RuntimeException("Participant or Discipline not found");
-    }
-
-    public Result updateResultForParticipant(Long participantId, Long disciplineId, Long resultId, Result updatedResult) {
-        Optional<Participant> participantOpt = participantRepository.findById(participantId);
-        Optional<Discipline> disciplineOpt = disciplineRepository.findById(disciplineId);
-        Optional<Result> resultOpt = resultRepository.findById(resultId);
-
-        if (participantOpt.isPresent() && disciplineOpt.isPresent() && resultOpt.isPresent()) {
-            Result result = resultOpt.get();
-
-            // Update result fields as necessary
-            result.setResultValue(updatedResult.getResultValue());
-            result.setDate(updatedResult.getDate());
-
-            return resultRepository.save(result);
-        }
-        throw new RuntimeException("Participant, Discipline, or Result not found");
-    }
-
-
-
-    public Result updateResult(Long resultId, Result updatedResult) {
-        Optional<Result> resultOpt = resultRepository.findById(resultId);
-
-        if (resultOpt.isPresent()) {
-            Result existingResult = resultOpt.get();
-            existingResult.setResultValue(updatedResult.getResultValue());
-            existingResult.setDate(updatedResult.getDate());
-            return resultRepository.save(existingResult);
-        }
-        return null;
-    }
-    // 11. Slet et resultat
-    public void deleteResult(Long resultId) {
-        resultRepository.deleteById(resultId);
-    }
 
 }

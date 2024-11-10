@@ -27,44 +27,68 @@ public class ParticipantController {
         this.participantService = participantService;
     }
 
-    // 1. Hent alle deltagere
-    @GetMapping
-    public ResponseEntity<List<Participant>> getAllParticipants() {
-        List<Participant> participants = participantService.getAllParticipants();
-        return ResponseEntity.ok(participants);
+    // Create a new participant
+    @PostMapping
+    public Participant createParticipant(@RequestBody Participant participant) {
+        return participantService.createParticipant(participant);
     }
 
-    // 2. Hent detaljer om en specifik deltager ved ID
+    // Get all participants
+    @GetMapping
+    public List<Participant> getAllParticipants() {
+        return participantService.getAllParticipants();
+    }
+
+    // Get a participant by ID
     @GetMapping("/{id}")
     public ResponseEntity<Participant> getParticipantById(@PathVariable Long id) {
-        Optional<Participant> participant = participantService.getParticipantById(id);
-        return participant.map(ResponseEntity::ok)
+        return participantService.getParticipantById(id)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 3. Opret en ny deltager
-    @PostMapping
-    public ResponseEntity<Participant> createParticipant(@RequestBody Participant participant) {
-        Participant createdParticipant = participantService.createParticipant(participant);
-        return ResponseEntity.ok(createdParticipant);
-    }
+    // Update a participant by ID
 
-    // 4. Opdater en eksisterende deltager
-    @PutMapping("/{id}")
-    public ResponseEntity<Participant> updateParticipant(@PathVariable Long id, @RequestBody Participant updatedParticipant) {
-        Participant participant = participantService.updateParticipant(id, updatedParticipant);
-        if (participant != null) {
-            return ResponseEntity.ok(participant);
-        }
-        return ResponseEntity.notFound().build();
-    }
 
-    // 5. Slet en deltager baseret på ID
+    // Delete a participant by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteParticipant(@PathVariable Long id) {
         participantService.deleteParticipant(id);
         return ResponseEntity.noContent().build();
     }
+
+    // Add a discipline to a participant
+    @PostMapping("/{participantId}/disciplines/{disciplineId}")
+    public Participant addDisciplineToParticipant(@PathVariable Long participantId, @PathVariable Long disciplineId) {
+        return participantService.addDisciplineToParticipant(participantId, disciplineId);
+    }
+
+    // Remove a discipline from a participant
+    @DeleteMapping("/{participantId}/disciplines/{disciplineId}")
+    public Participant removeDisciplineFromParticipant(@PathVariable Long participantId, @PathVariable Long disciplineId) {
+        return participantService.removeDisciplineFromParticipant(participantId, disciplineId);
+    }
+
+    // Add a result to a participant
+    @PostMapping("/{participantId}/results")
+    public Result addResultToParticipant(@PathVariable Long participantId, @RequestBody Result result) {
+        return participantService.addResultToParticipant(participantId, result);
+    }
+
+    // Remove a result by result ID
+    @DeleteMapping("/results/{resultId}")
+    public ResponseEntity<Void> removeResult(@PathVariable Long resultId) {
+        participantService.removeResult(resultId);
+        return ResponseEntity.noContent().build();
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Participant> updateParticipant(
+            @PathVariable Long id, @RequestBody Participant updatedParticipant) {
+        Participant participant = participantService.updateParticipant(id, updatedParticipant);
+        return ResponseEntity.ok(participant);
+    }
+
+
 
     // 6. Søg deltagere baseret på navn
     @GetMapping("/search")
@@ -85,48 +109,8 @@ public class ParticipantController {
         return ResponseEntity.ok(participants);
     }
 
-    // 8. Tilføj en disciplin til en deltager
-    @PostMapping("/{participantId}/disciplines/{disciplineId}")
-    public ResponseEntity<Participant> addDisciplineToParticipant(
-            @PathVariable Long participantId, @PathVariable Long disciplineId) {
-        try {
-            Participant updatedParticipant = participantService.addDisciplineToParticipant(participantId, disciplineId);
-            return ResponseEntity.ok(updatedParticipant);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
-
-
-    // 9. Tilføj et resultat for en deltager i en given disciplin
-    @PostMapping("/{participantId}/disciplines/{disciplineId}/results")
-    public ResponseEntity<Result> addResultToParticipant(
-            @PathVariable Long participantId,
-            @PathVariable Long disciplineId,
-            @RequestBody Result result) {
-        Result createdResult = participantService.addResultToParticipant(participantId, disciplineId, result);
-        if (createdResult != null) {
-            return ResponseEntity.ok(createdResult);
-        }
-        return ResponseEntity.notFound().build();
-    }
 
 
 
-    // 10. Opdater et resultat
-    @PutMapping("/results/{resultId}")
-    public ResponseEntity<Result> updateResult(@PathVariable Long resultId, @RequestBody Result updatedResult) {
-        Result result = participantService.updateResult(resultId, updatedResult);
-        if (result != null) {
-            return ResponseEntity.ok(result);
-        }
-        return ResponseEntity.notFound().build();
-    }
 
-    // 11. Slet et resultat
-    @DeleteMapping("/results/{resultId}")
-    public ResponseEntity<Void> deleteResult(@PathVariable Long resultId) {
-        participantService.deleteResult(resultId);
-        return ResponseEntity.noContent().build();
-    }
 }

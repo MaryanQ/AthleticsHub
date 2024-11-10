@@ -10,7 +10,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -34,19 +36,19 @@ public class Participant {
     @Enumerated(EnumType.STRING)
     private AgeGroup ageGroup;
 
-    @OneToMany(mappedBy = "participant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JsonManagedReference(value = "participant-results")
     private List<Result> results = new ArrayList<>();
 
 
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) // Fjernet CascadeType.REMOVE
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
             name = "participant_discipline",
             joinColumns = @JoinColumn(name = "participant_id"),
             inverseJoinColumns = @JoinColumn(name = "discipline_id")
     )
-    private List<Discipline> disciplines = new ArrayList<>();
+    private Set<Discipline> disciplines = new HashSet<>();
 
     public Participant(String firstName, String lastName, Gender gender, int age, String club) {
         this.firstName = firstName;

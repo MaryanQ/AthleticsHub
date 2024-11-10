@@ -28,7 +28,7 @@ public class Result {
     @JsonBackReference(value = "participant-results")
     private Participant participant;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "discipline_id", nullable = false)
     @JsonBackReference(value = "discipline-results")
     private Discipline discipline;
