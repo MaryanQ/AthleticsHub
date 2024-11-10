@@ -3,11 +3,14 @@ package atletik.rename_me.service;
 import atletik.rename_me.entity.Discipline;
 import atletik.rename_me.entity.Participant;
 import atletik.rename_me.entity.Result;
+import atletik.rename_me.enums.AgeGroup;
+import atletik.rename_me.enums.Gender;
 import atletik.rename_me.exception.ParticipantNotFoundException;
 import atletik.rename_me.repository.DisciplineRepository;
 import atletik.rename_me.repository.ParticipantRepository;
 
 import atletik.rename_me.repository.ResultRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -25,7 +29,13 @@ public class ParticipantService {
     private final DisciplineRepository disciplineRepository;
     private final ResultRepository resultRepository;
     private static final Logger logger = LoggerFactory.getLogger(ParticipantService.class);
-
+    private static final Map<String, AgeGroup> ageGroupMap = Map.of(
+            "6-9", AgeGroup.CHILD,
+            "10-13", AgeGroup.YOUTH,
+            "14-22", AgeGroup.JUNIOR,
+            "23-40", AgeGroup.ADULT,
+            "41+", AgeGroup.SENIOR
+    );
 
     @Autowired
     public ParticipantService(ParticipantRepository participantRepository, DisciplineRepository disciplineRepository, ResultRepository resultRepository) {
@@ -86,6 +96,10 @@ public class ParticipantService {
         participantRepository.deleteById(id);
     }
 
+    public List<Participant> searchParticipantsByName(String name) {
+        return participantRepository.findByFirstNameContainingIgnoreCase(name);
+    }
+
     // 6. Add a discipline to a participant
     @Transactional
     public Participant addDisciplineToParticipant(Long participantId, Long disciplineId) {
@@ -126,32 +140,25 @@ public class ParticipantService {
 
 
 
-    // 6. Søg deltagere baseret på navn
-    public List<Participant> searchParticipantsByName(String name) {
-        // Denne metode søger efter deltagere, hvis navne indeholder en bestemt søgestreng (name).
-        // Metoden findByNameContainingIgnoreCase() antages her at være en metode i participantRepository, der kan finde deltagere,
-        // hvor navnet indeholder søgestrengen uanset store eller små bogstaver.
-        // Denne slags metode kræver, at participantRepository har en brugerdefineret søgning baseret på navn, f.eks. gennem Spring Data JPA’s query derivation.
-        return participantRepository.findByFirstNameContainingIgnoreCase(name);
+    public List<Participant> listParticipants(String genderStr, String ageGroupStr, String club, String discipline) {
+        // Safely parse and map gender and age group with null checks
+        Gender gender = (genderStr != null) ? Gender.valueOf(genderStr.toUpperCase()) : null;
+        AgeGroup ageGroup = (ageGroupStr != null) ? ageGroupMap.get(ageGroupStr) : null;
+
+        // Logging for debugging
+        logger.info("Filtering with parameters: gender={}, ageGroup={}, club={}, discipline={}", gender, ageGroup, club, discipline);
+
+        // Call the repository to fetch participants based on filters
+        return participantRepository.filterParticipants(gender, ageGroup, club, discipline);
     }
 
-    // 7. List deltagere med sortering og filtreringsmuligheder
-    public List<Participant> listParticipants(String gender, String ageGroup, String club, String discipline) {
-        // Denne metode giver mulighed for at filtrere deltagere baseret på flere parametre som køn, aldersgruppe, klub og disciplin.
-        // Den tjekker først, om der er en værdi i discipline. Hvis discipline ikke er tomt, kalder den findByDisciplineName() for at finde deltagere i den pågældende disciplin.
-        // Hvis discipline er tomt, men mindst én af de andre parametre (gender, ageGroup, club) er angivet, kalder den filterParticipants() for at filtrere baseret på de angivne kriterier.
-        // Hvis ingen parametre er angivet, kalder den blot findAll() for at returnere alle deltagere.
-        // Både findByDisciplineName() og filterParticipants() antages at være brugerdefinerede metoder i participantRepository, som ville kræve specifikke databaseforespørgsler.
-        if (discipline != null && !discipline.isEmpty()) {
-            return participantRepository.findByDisciplineName(discipline); // Brugerdefineret query
-        } else if (gender != null || ageGroup != null || club != null) {
-            return participantRepository.filterParticipants(gender, ageGroup, club); // Brugerdefineret query for flere filtre
-        } else {
-            return participantRepository.findAll();
-        }
-    }
 
 
 
 
 }
+
+
+
+
+

@@ -39,4 +39,6 @@ public class Discipline {
         this.name = name;
         this.resultType = resultType;
     }
+
+
 }

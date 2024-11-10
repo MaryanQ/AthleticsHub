@@ -11,6 +11,7 @@ import atletik.rename_me.repository.ParticipantRepository;
 import atletik.rename_me.repository.ResultRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +64,19 @@ public class ResultService {
     }
 
     // Delete a result by ID
-    public void deleteResult(Long id) {
-        resultRepository.deleteById(id);
+
+    @Transactional
+    public void deleteResult(Long resultId) {
+        // Find all participants that reference this result
+        List<Participant> participants = participantRepository.findAllByResultsId(resultId);
+
+        // Remove the result reference from each participant
+        for (Participant participant : participants) {
+            participant.getResults().removeIf(result -> result.getId().equals(resultId));
+            participantRepository.save(participant); // Save each participant after removing the result
+        }
+
+        // Permanently delete the result
+        resultRepository.deleteById(resultId);
     }
 }

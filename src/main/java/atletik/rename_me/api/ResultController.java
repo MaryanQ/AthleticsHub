@@ -59,9 +59,20 @@ public class ResultController {
     }
 
     // Delete a result
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteResult(@PathVariable Long id) {
-        resultService.deleteResult(id);
-        return ResponseEntity.noContent().build();
+    //@DeleteMapping("/{id}")
+    //public ResponseEntity<Void> deleteResult(@PathVariable Long id) {
+      //  resultService.deleteResult(id);
+        //return ResponseEntity.noContent().build();
+    //}
+
+
+    @DeleteMapping("/{resultId}")
+    public ResponseEntity<String> deleteResult(@PathVariable Long resultId) {
+        try {
+            resultService.deleteResult(resultId);
+            return ResponseEntity.ok("Result deleted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error deleting result: " + e.getMessage());
+        }
     }
 }

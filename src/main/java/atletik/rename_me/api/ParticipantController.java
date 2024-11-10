@@ -98,13 +98,14 @@ public class ParticipantController {
     }
 
     // 7. List deltagere med sortering og filtreringsmuligheder
-    @GetMapping("/filter")
+    // Endpoint til at liste deltagere med filtreringsmuligheder
+
+    @GetMapping("/participants")
     public ResponseEntity<List<Participant>> listParticipants(
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String ageGroup,
             @RequestParam(required = false) String club,
             @RequestParam(required = false) String discipline) {
-
         List<Participant> participants = participantService.listParticipants(gender, ageGroup, club, discipline);
         return ResponseEntity.ok(participants);
     }

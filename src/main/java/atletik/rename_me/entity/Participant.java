@@ -37,6 +37,8 @@ public class Participant {
     private AgeGroup ageGroup;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+
+
     @JsonManagedReference(value = "participant-results")
     private List<Result> results = new ArrayList<>();
 
